@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo2/src/screens/note_editor.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -10,6 +11,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   var isNoteEmpty = false;
+
+  testREadData() {
+    SharedPreferences.getInstance()
+        .then((value) => print(value.getStringList('notes')));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +89,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         height: 70,
                         width: 70,
                         child: IconButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              testREadData();
+                            },
                             icon: Icon(
                               Icons.delete,
                               size: 50,

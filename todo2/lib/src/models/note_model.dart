@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class Note {
   String? title;
   String? body;
@@ -9,16 +11,19 @@ class Note {
     this.dateTime,
   });
 
-  toMap() {
+  Map<String, dynamic> toMap() {
     return {
       'title': title,
       'body': body,
-      'dateTime': dateTime,
+      'dateTime': dateTime?.toIso8601String(),
     };
   }
 
-  static fromMap(Map<String, dynamic> map) {
+  static Note fromMap(String stringMap) {
+    var map = json.decode(stringMap) as Map<String, dynamic>;
     return Note(
-        title: map['title'], body: map['body'], dateTime: map['dateTime']);
+        title: map['title'],
+        body: map['body'],
+        dateTime: DateTime.tryParse(map['dateTime']));
   }
 }
