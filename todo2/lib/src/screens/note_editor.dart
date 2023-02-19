@@ -15,8 +15,28 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   TextEditingController titleTVC = TextEditingController();
   TextEditingController bodyTVC = TextEditingController();
 
+  var isUpdate = false;
+  Note? updateNote;
+
+  var isCheckedTheUpdaterStat = false;
+
+  loadUpdateData() {
+    updateNote ??= ModalRoute.of(context)!.settings.arguments as Note?;
+    isUpdate = updateNote != null;
+    if (isUpdate) {
+      titleTVC.text = updateNote?.title ?? "";
+      bodyTVC.text = updateNote?.body ?? "";
+    }
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!isCheckedTheUpdaterStat) {
+      isCheckedTheUpdaterStat = !isCheckedTheUpdaterStat;
+      loadUpdateData();
+    }
+
     return Scaffold(
       backgroundColor: Color.fromARGB(255, 7, 33, 55),
       appBar: AppBar(
@@ -63,25 +83,66 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   }
 
   void saveAndQuit() async {
-    var title = titleTVC.text;
-    var body = bodyTVC.text;
+    if (isUpdate) {
+      var title = titleTVC.text;
+      var body = bodyTVC.text;
 
-    if (title.isEmpty && body.isEmpty) {
-      Navigator.pop(context);
+      if (title.isEmpty && body.isEmpty) {
+        Navigator.pop(context);
+      }
+
+      var mNote = Note(title: title, body: body, dateTime: DateTime.now());
+
+      var prefs = await SharedPreferences.getInstance();
+      var noteList = prefs.getStringList('notes') ?? [];
+
+      var noteListModel = noteList.map((e) => Note.fromMap(e)).toList();
+
+      var indexOfItem = 0;
+
+      for (var i = 0; i < noteListModel.length; i++) {
+        var noteTime = noteListModel[i].dateTime!.millisecondsSinceEpoch;
+
+        var updaterTime = updateNote!.dateTime!.millisecondsSinceEpoch;
+        if (noteTime == updaterTime) {
+          indexOfItem = i;
+          break;
+        }
+      }
+
+      noteListModel[indexOfItem] = mNote;
+
+      noteListModel.sort((a, b) {
+        return b.dateTime!.compareTo(a.dateTime!);
+      });
+
+      noteList = noteListModel.map((e) => jsonEncode(e.toMap())).toList();
+
+      prefs.setStringList('notes', noteList);
+    } else {
+      var title = titleTVC.text;
+      var body = bodyTVC.text;
+
+      if (title.isEmpty && body.isEmpty) {
+        Navigator.pop(context);
+      }
+
+      var mNote = Note(title: title, body: body, dateTime: DateTime.now());
+
+      var prefs = await SharedPreferences.getInstance();
+      var noteList = prefs.getStringList('notes') ?? [];
+
+      var noteListModel = noteList.map((e) => Note.fromMap(e)).toList();
+      noteListModel.add(mNote);
+
+      noteListModel.sort((a, b) {
+        return b.dateTime!.compareTo(a.dateTime!);
+      });
+
+      noteList = noteListModel.map((e) => jsonEncode(e.toMap())).toList();
+
+      prefs.setStringList('notes', noteList);
     }
-
-    var mNote = Note(title: title, body: body, dateTime: DateTime.now());
-
-    var mNoteMap = mNote.toMap();
-
-    var jsonString = jsonEncode(mNoteMap);
-
-    var prefs = await SharedPreferences.getInstance();
-    var noteList = prefs.getStringList('notes') ?? [];
-
-    noteList.add(jsonString);
-
-    prefs.setStringList('notes', noteList);
 
     if (mounted) {
       Navigator.pop(context);
