@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:user_api/src/user_model.dart';
@@ -16,7 +17,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     getUsers();
   }
@@ -45,40 +45,47 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(50),
-            child: Image.network(
-              user.imageURL!,
+            child: CachedNetworkImage(
+              imageUrl: user.imageURL!,
+              placeholder: (context, url) {
+                return FlutterLogo();
+              },
               width: 100,
               height: 100,
             ),
           ),
-          SizedBox(
-            width: 16,
-          ),
+          SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                user.name!.toUpperCase(),
-                style: TextStyle(color: Colors.white, fontSize: 18),
+                (user.name ?? "").toUpperCase(),
+                style: TextStyle(color: Colors.white, fontSize: 20),
               ),
-              Text("@${user.userName!}", style: TextStyle(color: Colors.white)),
+              Text("@${user.userName ?? ""}",
+                  style: TextStyle(color: Colors.white)),
               SizedBox(
                 height: 10,
               ),
-              Container(
-                padding: EdgeInsets.only(left: 8, right: 8, top: 2, bottom: 2),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(user.userName!),
-                    SizedBox(width: 10),
-                    Icon(Icons.call),
-                  ],
+              GestureDetector(
+                onTap: () {
+                  print("touched");
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10)),
+                  child: Row(
+                    children: [
+                      Text(user.phone ?? ""),
+                      SizedBox(
+                        width: 10,
+                      ),
+                      Icon(Icons.phone),
+                    ],
+                  ),
                 ),
               )
             ],
@@ -91,9 +98,12 @@ class _HomeScreenState extends State<HomeScreen> {
   getUsers() async {
     var mData = await http.get(Uri.parse("https://api.github.com/users"));
 
-    var jsonString = json.decode(mData.body) as List<dynamic>;
+    var body = mData.body;
 
-    jsonString.forEach((element) {
+    var jsonData = json.decode(body);
+    var jsonList = jsonData as List<dynamic>;
+
+    jsonList.forEach((element) {
       var user = UserModel.fromMap(element);
       users.add(user);
     });
